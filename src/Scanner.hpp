@@ -4,24 +4,38 @@
 #include <vector>
 #include <unordered_map>
 #include "Token.hpp"
+#include "TokenType.hpp"
 namespace nido {
     class Scanner {
         public:
-            Scanner(std::string sourceCode) : sourceCode(sourceCode), currentPos(0), line(1) {}
-            std::vector<Token> scanTokens();
-            std::vector<Token> scanToken();
+            Scanner(std::string sourceCode, std::string fileName) : sourceCode(sourceCode), fileName(fileName), currentPos(-1), line(1), linePos(0), hasError(false) {}
+            void scanTokens();
+            static std::unordered_map<std::string, TokenType> keywords;
+            static std::unordered_map<std::string, TokenType> lookahead;
+            void printAllTokens();
+            std::string getSourceCode() { return sourceCode; }
+            std::string fileName;
         private:
             std::string sourceCode;
             std::vector<Token> tokens;
+            int currentPos;
+            int line;
+            int linePos;
+            bool hasError;
             inline bool isAtEnd();
-            char void advance();
+            char advance();
             inline void goback();
             inline char getCurrentChar();
             inline char getNextChar();
-            void addToken(TokenType type);
-
-            int currentPos;
-            static int line;
+            void addToken(TokenType type, std::string lexeme, std::string literal);
+            void error();
+            void scanLookahead();
+            bool isLookahead(char ch);
+            void scanNums();
+            void scanIdentifiersOrKeywords();
+            void scanComment();
+            void scanString();
     };
 }
+
 #endif

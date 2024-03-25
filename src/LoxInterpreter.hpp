@@ -1,6 +1,7 @@
 #ifndef LOXINTERPRETER_H
 #define LOXINTERPRETER_H
-#include<string>
+#include <string>
+#include "Scanner.hpp"
 namespace nido {
     class LoxInterpreter {
         public:
@@ -12,6 +13,5 @@ namespace nido {
             std::string interpret(std::string sourceCode); 
 
     };
-    bool LoxInterpreter::hadError = false;
 }
 #endif

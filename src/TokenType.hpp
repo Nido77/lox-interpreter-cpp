@@ -1,24 +1,27 @@
 #ifndef TOKENTYPE_H
 #define TOKENTYPE_H
-enum class TokenType {
-    // Single-character tokens
-    LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE,
-    COMMA, DOT, MINUS, PLUS, SEMICOLON, SLASH, STAR,
+#include <unordered_map>
+namespace nido {
+    enum class TokenType {
+        // Single-character tokens
+        LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE,
+        COMMA, DOT, MINUS, PLUS, SEMICOLON, SLASH, STAR, COLON,
 
-    // One or two character tokens
-    BANG, BANG_EQUAL,
-    EQUAL, EQUAL_EQUAL,
-    GREATER, GREATER_EQUAL,
-    LESS, LESS_EQUAL,
+        // One or two character tokens
+        BANG, BANG_EQUAL,
+        EQUAL, EQUAL_EQUAL,
+        GREATER, GREATER_EQUAL,
+        LESS, LESS_EQUAL,
 
-    // Literals
-    IDENTIFIER, STRING, NUMBER,
+        // Literals
+        IDENTIFIER, STRING, NUMBER,
 
-    // Keywords
-    AND, CLASS, ELSE, FALSE, FUN, FOR, IF, NIL, OR,
-    PRINT, RETURN, SUPER, THIS, TRUE, VAR, WHILE,
+        // Keywords
+        AND, CLASS, ELSE, FALSE, FUN, FOR, IF, NIL, OR,
+        PRINT, RETURN, SUPER, THIS, TRUE, VAR, WHILE,
 
-    // End of file
-    END_OF_FILE
-};
+        // End of file
+        END_OF_FILE
+    };
+}
 #endif
