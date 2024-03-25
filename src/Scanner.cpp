@@ -90,22 +90,35 @@ namespace nido {
 
     void Scanner::scanNums() {
         std::string num;
+        bool hasDot = false;
         while (isdigit(getCurrentChar())) {
             num += getCurrentChar();
             advance();
         }
-        if (getCurrentChar() == '.' || getCurrentChar() == 'e' || getCurrentChar() == 'E') {
+        if (getCurrentChar() == '.' && isdigit(getNextChar())) {
             num += getCurrentChar();
             advance();
+            hasDot = true;
             while (isdigit(getCurrentChar())) {
                 num += getCurrentChar();
                 advance();
             }
+        } else if (getCurrentChar() == '.' && !isdigit(getNextChar())) {
+            addToken(TokenType::NUMBER, num, num+".0");
+            goback();
+            return;
         }
-        if (getCurrentChar() != ' ' || getCurrentChar() != '\n' || getCurrentChar() != '\r' || getCurrentChar() != '\t'){
+        if (getCurrentChar() != ' ' && getCurrentChar() != '\n' && getCurrentChar() != '\r' && getCurrentChar() != '\t') {
             error();
         }
-        addToken(TokenType::NUMBER, num);
+        std::string numLiteral = num;
+        if (numLiteral[numLiteral.length()-1] == '.') {
+            numLiteral += "0";
+        }
+        if (!hasDot) {
+            numLiteral += ".0";
+        }
+        addToken(TokenType::NUMBER, num, numLiteral);
     }
     void Scanner::scanIdentifiersOrKeywords() {
         std::string id;
@@ -133,12 +146,14 @@ namespace nido {
     }
     void Scanner::scanString() {
         std::string str;
+        str += getCurrentChar();
         advance();
         while (getCurrentChar() != '"') {
             str += getCurrentChar();
             advance();
         }
-        addToken(TokenType::STRING, str);
+        str += getCurrentChar();
+        addToken(TokenType::STRING, str, str.substr(1, str.length()-2));
     }
     void Scanner::scanTokens() {
         while (!isAtEnd() && !hasError) {
@@ -171,8 +186,11 @@ namespace nido {
        addToken(TokenType::END_OF_FILE, "");
     }
     void Scanner::printAllTokens() {
-        for (auto token : tokens) {
-            std::cout << token.getTypeStr() <<  " " << token.getLexeme() << " " << token.getLiteral() << std::endl;
+        for (int i = 0; i < tokens.size(); ++i) {
+            std::cout << tokens[i].getTypeStr() <<  " " << tokens[i].getLexeme() << " " << tokens[i].getLiteral();
+            if (i != tokens.size()-1) {
+                std::cout << std::endl;
+            }
         }
     }
 }
