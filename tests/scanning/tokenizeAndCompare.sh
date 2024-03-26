@@ -10,8 +10,8 @@ outputSuffix="out"
 # trasverse all lox files
 for folderName in "${folderNames[@]}"; do
     currentFile="${folderName}\\${folderName}.${loxsuffix}"
-    ../../lox-interpreter "${currentFile}" > "${folderName}\\${folderName}.${outputSuffix}"
-    echo "{$folderName} lexical anaysisdone"
+    ../../cpp-lox "${currentFile}" > "${folderName}\\${folderName}.${outputSuffix}"
+    echo "{$folderName} lexical anaysis done"
 done
 
 
