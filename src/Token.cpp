@@ -1,7 +1,10 @@
-
-# include "Token.hpp"
+#include <sstream>
+#include <iomanip>
+#include <limits>
+#include "Token.hpp"
+#include "TokenType.hpp"
 namespace nido {
-    std::unordered_map<TokenType, std::string> Token::tokenTypeToStr {
+    std::unordered_map<TokenType, std::string> Token::tokenTypeToStr = {
         {TokenType::LEFT_PAREN, "LEFT_PAREN"},
         {TokenType::RIGHT_PAREN, "RIGHT_PAREN"},
         {TokenType::LEFT_BRACE, "LEFT_BRACE"},
@@ -43,4 +46,26 @@ namespace nido {
         {TokenType::WHILE, "WHILE"},
         {TokenType::END_OF_FILE, "EOF"}
     };
+
+    std::ostream& operator<<(std::ostream& os, Token& t) {
+        if (t.getType() != TokenType::NUMBER && t.getType() != TokenType::STRING){
+            os << t.getTypeStr() << " " << t.getLexeme() << " " << "null"; 
+        } else {
+            os << t.getTypeStr() << " " << t.getLexeme() << " " << t.getLiteral();
+        }
+        return os;
+    }
+    std::string Token::getLiteral() {
+        if (type == TokenType::NUMBER) {
+            double val = std::stod(lexeme);
+            std::ostringstream oss;
+            oss << std::setprecision(std::numeric_limits<double>::max_digits10) << val;
+            std::string s = oss.str();
+            return s;
+        } else if (type == TokenType::STRING) {
+            return lexeme.substr(1, lexeme.length() - 2);
+        } else {
+            return "null";
+        }
+    }
 }

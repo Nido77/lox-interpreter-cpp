@@ -5,36 +5,35 @@
 #include <unordered_map>
 #include "Token.hpp"
 #include "TokenType.hpp"
+
 namespace nido {
     class Scanner {
         public:
-            Scanner(std::string sourceCode, std::string fileName) : sourceCode(sourceCode), fileName(fileName), currentPos(-1), line(1), linePos(0), hasError(false) {}
-            void scanTokens();
-            static std::unordered_map<std::string, TokenType> keywords;
-            static std::unordered_map<std::string, TokenType> lookahead;
-            void printAllTokens();
-            std::string getSourceCode() { return sourceCode; }
+            Scanner(std::string sourceCode) : sourceCode(sourceCode), start(0), current(0), line(1) {}
+            std::vector<Token> scanTokens();
+            std::string getSourceCode() const{ return sourceCode; }
             std::string fileName;
+            int getTokensSize() const { return tokens.size(); }
         private:
             std::string sourceCode;
             std::vector<Token> tokens;
-            int currentPos;
+            int start;
             int line;
-            int linePos;
-            bool hasError;
+            int current;
             inline bool isAtEnd();
+            void scanToken();
             char advance();
-            inline void goback();
-            inline char getCurrentChar();
-            inline char getNextChar();
-            void addToken(TokenType type, std::string lexeme, std::string literal);
-            void error();
-            void scanLookahead();
-            bool isLookahead(char ch);
-            void scanNums();
-            void scanIdentifiersOrKeywords();
-            void scanComment();
+            void addToken(TokenType type);
+            bool match(char expected);
+            char peek();
+            char peekNext();
             void scanString();
+            void scanNumber();
+            void scanIdentifierOrKeyword();
+            bool isAplhaNumber(char c) const {
+                return isalpha(c) || isdigit(c) || c == '_';
+            };
+            static std::unordered_map<std::string, TokenType> keywords;
     };
 }
 

@@ -3,7 +3,7 @@ CXXFLAGS := -std=c++11 -Wall -Wextra -Wpedantic
 
 SRCS := main.cpp $(wildcard src/*.cpp)
 OBJS := $(SRCS:.cpp=.o)
-EXEC := lox-interpreter
+EXEC := cpp-lox
 
 .PHONY: all clean
 

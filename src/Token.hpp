@@ -1,24 +1,26 @@
 #ifndef TOKEN_H
 #define TOKEN_H
 #include <string>
+#include <iostream>
 #include <unordered_map>
 #include "TokenType.hpp"
+// overload << operator
 namespace nido {
     class Token {
         public:
-            Token(TokenType type, std::string lexeme, std::string literal, int line)
-                : type(type), lexeme(lexeme), literal(literal), line(line) {}
+            Token(TokenType type, std::string lexeme, int line)
+                : type(type), lexeme(lexeme), line(line) {}
             static std::unordered_map<TokenType, std::string> tokenTypeToStr;
-            TokenType getType() { return type; }
-            std::string getLexeme() { return lexeme; }
-            std::string getTypeStr() { return tokenTypeToStr[type];}
-            std::string getLiteral() { return literal; }
-            int getLine() { return line; }
+            friend std::ostream& operator<<(std::ostream& os, Token& t);
+            TokenType getType() const { return type;}
+            std::string getLexeme() const{ return lexeme;}
+            std::string getTypeStr() const  { return tokenTypeToStr[type];}
+            std::string getLiteral();
+            int getLine() const { return line; }
         private:
-            TokenType type;
-            std::string lexeme;
-            std::string literal;
-            int line;
+            const TokenType type;
+            const std::string lexeme;
+            const int line;
     };
 }
 #endif

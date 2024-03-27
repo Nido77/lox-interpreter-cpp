@@ -1,7 +1,7 @@
 #include <iostream>
 #include <cctype>
 #include "Scanner.hpp"
-// #define DEBUG
+#include "Lox.hpp"
 namespace nido {
     std::unordered_map<std::string, TokenType> Scanner::keywords = {
         {"and", TokenType::AND},
@@ -21,176 +21,180 @@ namespace nido {
         {"var", TokenType::VAR},
         {"while", TokenType::WHILE}
     };
-    std::unordered_map<std::string, TokenType> Scanner::lookahead = {
-        {"!", TokenType::BANG},
-        {"!=", TokenType::BANG_EQUAL},
-        {"=", TokenType::EQUAL},
-        {"==", TokenType::EQUAL_EQUAL},
-        {">", TokenType::GREATER},
-        {">=", TokenType::GREATER_EQUAL},
-        {"<", TokenType::LESS},
-        {"<=", TokenType::LESS_EQUAL},
-        {"+", TokenType::PLUS},
-        {"-", TokenType::MINUS},
-        {"*", TokenType::STAR},
-        {"/", TokenType::SLASH},
-        {"(", TokenType::LEFT_PAREN},
-        {")", TokenType::RIGHT_PAREN},
-        {"{", TokenType::LEFT_BRACE},
-        {"}", TokenType::RIGHT_BRACE},
-        {",", TokenType::COMMA},
-        {".", TokenType::DOT},
-        {";", TokenType::SEMICOLON},
-        {":", TokenType::COLON}
-    };
+
 
     bool Scanner::isAtEnd() {
-        return currentPos >= static_cast<int>(sourceCode.length());
-    }
-
-    void Scanner::addToken(TokenType type, std::string lexeme, std::string literal="null") {
-        tokens.push_back(Token(type, lexeme, literal, line));
+        unsigned int currentLength = static_cast<unsigned int>(current);
+        unsigned int sourceLength = sourceCode.length();
+        return currentLength >= sourceLength;
     }
 
     char Scanner::advance() {
-        ++currentPos;
-        ++linePos;
-        return sourceCode[currentPos];
+        current++;
+        return sourceCode[current - 1];
     }
-    
-    void Scanner::goback() {
-        if (currentPos != 0) {
-            --currentPos;
+
+    void Scanner::addToken(TokenType type) {
+        std::string text = sourceCode.substr(start, current - start);
+        tokens.push_back(Token(type, text, line));
+    }
+
+    // void Scanner::addToken(TokenType type, std::string lexeme) {
+    //     std::string text = sourceCode.substr(start, current - start);
+    //     tokens.push_back(Token(type, text, literal, line));
+    // }
+
+    bool Scanner::match(char expected) {
+        if (isAtEnd()) {
+            return false;
         }
-    }
-
-    char Scanner::getCurrentChar() {
-        return sourceCode[currentPos];
-    }
-
-    char Scanner::getNextChar() {
-        return currentPos+1 > sourceCode.length() ? ' ' : sourceCode[currentPos+1];
-    }
-
-    bool Scanner::isLookahead(char ch) {
-        std::string s(1, ch);
-        return lookahead.find(s) != lookahead.end();
-    }
-    void Scanner::scanLookahead() {
-        char ch = getCurrentChar();
-        std::string s1(1, ch);
-        std::string s2 = s1 + getNextChar();
-        if (lookahead.find(s2) != lookahead.end()) {
-            addToken(lookahead[s2], s2);
-            advance();
+        if (sourceCode[current] != expected) {
+            return false;
         } else {
-            addToken(lookahead[s1], s1);
+            current++;
+            return true;
         }
     }
 
-    void Scanner::scanNums() {
-        std::string num;
-        bool hasDot = false;
-        while (isdigit(getCurrentChar())) {
-            num += getCurrentChar();
+    char Scanner::peek() {
+        if (isAtEnd()) {
+            return '\0';
+        }
+        return sourceCode[current];
+    }
+
+    char Scanner::peekNext() {
+        if (current + 1 >= sourceCode.length()) {
+            return '\0';
+        }
+        return sourceCode[current + 1];
+    }
+
+    void Scanner::scanString() {
+        while (peek() != '"' && !isAtEnd()) {
+            if (peek() == '\n') {
+                line++;
+            }
             advance();
         }
-        if (getCurrentChar() == '.' && isdigit(getNextChar())) {
-            num += getCurrentChar();
-            advance();
-            hasDot = true;
-            while (isdigit(getCurrentChar())) {
-                num += getCurrentChar();
-                advance();
-            }
-        } else if (getCurrentChar() == '.' && !isdigit(getNextChar())) {
-            addToken(TokenType::NUMBER, num, num+".0");
-            goback();
+        if (isAtEnd()) {
+            Lox::error(line, "Unterminated string.");
             return;
         }
-        if (getCurrentChar() != ' ' && getCurrentChar() != '\n' && getCurrentChar() != '\r' && getCurrentChar() != '\t') {
-            error();
-        }
-        std::string numLiteral = num;
-        if (numLiteral[numLiteral.length()-1] == '.') {
-            numLiteral += "0";
-        }
-        if (!hasDot) {
-            numLiteral += ".0";
-        }
-        addToken(TokenType::NUMBER, num, numLiteral);
-    }
-    void Scanner::scanIdentifiersOrKeywords() {
-        std::string id;
-        while (isalnum(getCurrentChar()) || getCurrentChar() == '_') {
-            id += getCurrentChar();
-            advance();
-        }
-        if (keywords.find(id) != keywords.end()){
-            addToken(keywords[id], id);
-        } else {
-            addToken(TokenType::IDENTIFIER, id);
-        }
-        goback();
-    }
-    void Scanner::error() {
-        hasError = true;
-        std::cerr << "FileName:" << fileName << std::endl;
-        std::cerr << "Error at line [" << line << "]" << " at position [" << linePos << "] : " << sourceCode[currentPos] << std::endl;
-    }
-    void Scanner::scanComment() {
-        while (getCurrentChar() != '\n') {
-            advance();
-        }
-        goback();
-    }
-    void Scanner::scanString() {
-        std::string str;
-        str += getCurrentChar();
         advance();
-        while (getCurrentChar() != '"') {
-            str += getCurrentChar();
+        addToken(TokenType::STRING);
+    }
+
+    void Scanner::scanNumber() {
+        while (isdigit(peek())) {
             advance();
         }
-        str += getCurrentChar();
-        addToken(TokenType::STRING, str, str.substr(1, str.length()-2));
-    }
-    void Scanner::scanTokens() {
-        while (!isAtEnd() && !hasError) {
-            char ch = advance();
-            // remove whitespace
-            while (((ch == ' ') || (ch == '\n') || ch == '\r' || ch == '\t') && (!isAtEnd())) {
-                if (ch == '\n') {
-                    ++line;
-                    linePos = 0;
-                }
-                ch = advance();
-            }
-            if (isAtEnd() || hasError) {
-                break;
-            }
-            if (ch == '/' && getNextChar() == '/'){
-                scanComment();
-            } else if (isLookahead(ch)) {
-                scanLookahead();
-            } else if (isdigit(ch)) {
-                scanNums();
-            } else if (isalpha(ch) || ch == '_') {
-                scanIdentifiersOrKeywords();
-            } else if (ch == '"') {
-                scanString();
-            } else {
-                error();
+        if (peek() == '.' && isdigit(peekNext())) {
+            advance();
+            while (isdigit(peek())) {
+                advance();
             }
         }
-       addToken(TokenType::END_OF_FILE, "");
+        addToken(TokenType::NUMBER);
     }
-    void Scanner::printAllTokens() {
-        for (int i = 0; i < tokens.size(); ++i) {
-            std::cout << tokens[i].getTypeStr() <<  " " << tokens[i].getLexeme() << " " << tokens[i].getLiteral();
-            if (i != tokens.size()-1) {
-                std::cout << std::endl;
-            }
+    
+    void Scanner::scanIdentifierOrKeyword() {
+        while (isAplhaNumber(peek())) {
+            advance();
+        }
+        std::string text = sourceCode.substr(start, current - start);
+        auto it = keywords.find(text);
+        TokenType type = TokenType::IDENTIFIER;
+        if (it != keywords.end()) {
+            addToken(it->second);
+        } else {
+            addToken(type);
+        }
+    }
+
+    std::vector<Token> Scanner::scanTokens() {
+        while (!isAtEnd()) {
+            start = current;
+            scanToken();
+        }
+       tokens.push_back(Token(TokenType::END_OF_FILE, "", line));
+       return tokens;
+    }
+    void Scanner::scanToken() {
+        char c = advance();
+        switch (c) {
+           case '(':
+                addToken(TokenType::LEFT_PAREN);
+                break;
+            case ')':
+                addToken(TokenType::RIGHT_PAREN);
+                break;
+            case '{':
+                addToken(TokenType::LEFT_BRACE);
+                break;
+            case '}':
+                addToken(TokenType::RIGHT_BRACE);
+                break;
+            case ',':
+                addToken(TokenType::COMMA);
+                break;
+            case '.':
+                addToken(TokenType::DOT);
+                break;
+            case '-':
+                addToken(TokenType::MINUS);
+                break;
+            case '+':
+                addToken(TokenType::PLUS);
+                break;
+            case ';':
+                addToken(TokenType::SEMICOLON);
+                break;
+            case '*':
+                addToken(TokenType::STAR);
+                break;
+            case '!':
+                addToken(match('=') ? TokenType::BANG_EQUAL : TokenType::BANG);
+                break;
+            case '=':
+                addToken(match('=') ? TokenType::EQUAL_EQUAL : TokenType::EQUAL);
+                break;
+            case '<':
+                addToken(match('=') ? TokenType::LESS_EQUAL : TokenType::LESS);
+                break;
+            case '>':
+                addToken(match('=') ? TokenType::GREATER_EQUAL : TokenType::GREATER);
+                break;
+            case '/':
+                if (match('/')) {
+                    while (peek() != '\n' && !isAtEnd()) {
+                        advance();
+                    }
+                } else {
+                    addToken(TokenType::SLASH);
+                }
+                break;
+            // ignore whitespace
+            case ' ':
+            case '\r':
+            case '\t':
+                break;
+            
+            case '\n':
+                line++;
+                break;
+            case '"':
+                Scanner::scanString();
+                break;
+            default:
+                if (isdigit(c)) {
+                    scanNumber();
+                } else if (isAplhaNumber(c)) {
+                    scanIdentifierOrKeyword();
+                } else {
+                    Lox::error(line, "Unexpected character." + Lox::fileName + " " + c);
+                }
+                break;
         }
     }
 }

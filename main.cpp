@@ -1,14 +1,14 @@
 #include <iostream>
-#include "src/Loxinterpreter.hpp"
+#include "src/Lox.hpp"
+
 int main(int argc, char** argv) {
-    nido::LoxInterpreter interpreter;
+    // in cpp argv[0] is the programme name
+    nido::Lox loxInterpreter;
     if (argc > 2) {
-        std::cout << "Usage: ./lox-interpreter [script] \
-                      \n       ./lox-interpreter to run REPL" << std::endl;
-        return 1;
+        std::cout << "Usage: cpplox [filePath]" << std::endl;
     } else if (argc == 2) {
-        interpreter.runFile(argv[1]);
-    } else {
-        interpreter.runREPL();
+        loxInterpreter.runFile(argv[1]);
+    } else if (argc == 1) {
+        loxInterpreter.runPrompt();
     }
 }
